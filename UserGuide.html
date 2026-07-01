@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Train Info GPS Display — User Guide</title>
+<style>
+  @page { size: A4; margin: 20mm 18mm; }
+  body { font-family: Arial, sans-serif; font-size: 13px; color: #1a1a1a; line-height: 1.6; }
+  h1 { font-size: 26px; color: #003366; border-bottom: 3px solid #003366; padding-bottom: 6px; margin-top: 0; }
+  h2 { font-size: 18px; color: #005599; border-left: 5px solid #005599; padding-left: 10px; margin-top: 28px; }
+  h3 { font-size: 14px; color: #333; margin-top: 16px; }
+  .cover { text-align: center; padding: 60px 0 40px; border-bottom: 2px solid #003366; margin-bottom: 30px; }
+  .cover h1 { font-size: 32px; border: none; }
+  .cover .sub { font-size: 16px; color: #555; margin-top: 8px; }
+  .cover .version { margin-top: 30px; font-size: 12px; color: #888; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+  th { background: #003366; color: #fff; padding: 7px 10px; text-align: left; font-size: 12px; }
+  td { padding: 6px 10px; border-bottom: 1px solid #ddd; font-size: 12px; }
+  tr:nth-child(even) td { background: #f4f8ff; }
+  .note { background: #fff8e1; border-left: 4px solid #f0a500; padding: 8px 12px; margin: 10px 0; font-size: 12px; }
+  .tip  { background: #e8f5e9; border-left: 4px solid #2e7d32; padding: 8px 12px; margin: 10px 0; font-size: 12px; }
+  .warn { background: #fdecea; border-left: 4px solid #c62828; padding: 8px 12px; margin: 10px 0; font-size: 12px; }
+  .screen-box { display: inline-block; background: #111; color: #fff; border-radius: 10px;
+                padding: 14px 20px; margin: 10px 0; font-size: 12px; width: 94%; }
+  .screen-box .label { color: #00e5ff; font-weight: bold; display: block; margin-bottom: 4px; }
+  ul li { margin-bottom: 4px; }
+  .step { counter-increment: step; }
+  .steps { counter-reset: step; padding-left: 0; list-style: none; }
+  .steps li { margin: 6px 0; }
+  .steps li::before { content: counter(step) ". "; font-weight: bold; color: #003366; }
+  .page-break { page-break-before: always; }
+  footer { margin-top: 40px; font-size: 10px; color: #aaa; text-align: center; border-top: 1px solid #ddd; padding-top: 8px; }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <h1>Train Info GPS Display</h1>
+  <div class="sub">User Guide &amp; Operation Manual</div>
+  <br>
+  <div style="font-size:13px;color:#444;">
+    ESP32-S3 &nbsp;|&nbsp; 3.5&quot; Touch Display &nbsp;|&nbsp; GPS Announcements &nbsp;|&nbsp; SD Audio
+  </div>
+  <div class="version">MindCoin &nbsp;·&nbsp; 2025 &nbsp;·&nbsp; v1.0</div>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<h2>Contents</h2>
+<ol style="line-height:2;">
+  <li>System Overview</li>
+  <li>Hardware &amp; Connections</li>
+  <li>Getting Started</li>
+  <li>Screen-by-Screen Guide
+    <ul>
+      <li>4.1 Home Menu</li>
+      <li>4.2 Trip Search</li>
+      <li>4.3 Trip Details</li>
+      <li>4.4 Station Screen</li>
+      <li>4.5 Settings Menu</li>
+      <li>4.6 Audio Volume</li>
+      <li>4.7 Announcement Settings</li>
+      <li>4.8 WiFi Settings</li>
+      <li>4.9 GPS Info</li>
+      <li>4.10 Approach Distance</li>
+      <li>4.11 GPS Match Distance</li>
+    </ul>
+  </li>
+  <li>Audio Announcements</li>
+  <li>SD Card &amp; Audio Files</li>
+  <li>WiFi &amp; Downloads</li>
+  <li>Battery Status</li>
+  <li>Troubleshooting</li>
+</ol>
+
+<!-- SECTION 1 -->
+<div class="page-break"></div>
+<h2>1. System Overview</h2>
+<p>The Train Info GPS Display is an in-vehicle device that shows your train's upcoming stations in real time using GPS. It announces each station name through a built-in speaker and displays the distance remaining to the next stop.</p>
+
+<table>
+  <tr><th>Feature</th><th>Description</th></tr>
+  <tr><td>Display</td><td>3.5&quot; colour touch screen, 480 × 320 pixels</td></tr>
+  <tr><td>GPS</td><td>Live location tracking — shows distance to each station</td></tr>
+  <tr><td>Audio</td><td>Station name announced automatically as train approaches</td></tr>
+  <tr><td>Trip Data</td><td>Stored on SD card as JSON files, one per route</td></tr>
+  <tr><td>WiFi</td><td>Downloads trip data and audio files over the air</td></tr>
+  <tr><td>Battery</td><td>3-cell LiPo with live percentage shown in header</td></tr>
+  <tr><td>Volume</td><td>Adjustable 0 – 100% from the Settings menu</td></tr>
+</table>
+
+<!-- SECTION 2 -->
+<h2>2. Hardware &amp; Connections</h2>
+<table>
+  <tr><th>Component</th><th>GPIO Pin(s)</th><th>Note</th></tr>
+  <tr><td>TFT Display</td><td>SCK=12 MOSI=11</td><td>SPI shared bus</td></tr>
+  <tr><td>Touch Panel</td><td>CS=14 MISO=13</td><td>XPT2046</td></tr>
+  <tr><td>SD Card</td><td>CS=15 MISO=40</td><td>FAT32 formatted</td></tr>
+  <tr><td>GPS Module</td><td>RX=16 TX=17</td><td>9600 baud NMEA</td></tr>
+  <tr><td>I2S Amplifier</td><td>BCK=35 LRC=36 DIN=37</td><td>MAX98357A</td></tr>
+  <tr><td>Amp Relay</td><td>GPIO 38</td><td>HIGH = amp on</td></tr>
+  <tr><td>Backlight</td><td>GPIO 18 (PWM)</td><td>Full brightness at boot</td></tr>
+  <tr><td>Battery ADC</td><td>GPIO 1</td><td>Voltage divider 40k/10k</td></tr>
+</table>
+
+<!-- SECTION 3 -->
+<h2>3. Getting Started</h2>
+<ol class="steps">
+  <li class="step">Insert a FAT32-formatted SD card containing your trip JSON files.</li>
+  <li class="step">Power on the device. The MindCoin splash screen appears while it initialises GPS, SD, WiFi and battery.</li>
+  <li class="step">Wait for the progress bar to reach 100% — the Home Menu is shown automatically.</li>
+  <li class="step">Connect to WiFi once (Settings → WiFi Setting) so trip and audio files can be downloaded.</li>
+  <li class="step">Tap <strong>Trip</strong> on the Home Menu, type your train number, then tap <strong>SEARCH</strong>.</li>
+  <li class="step">Tap <strong>START</strong> on the Trip Details screen to begin tracking.</li>
+</ol>
+
+<div class="tip"><strong>Tip:</strong> The device remembers your WiFi credentials, volume level, and all settings between power cycles.</div>
+
+<!-- SECTION 4 -->
+<div class="page-break"></div>
+<h2>4. Screen-by-Screen Guide</h2>
+
+<h3>4.1 Home Menu</h3>
+<div class="screen-box">
+  <span class="label">[ HOME MENU ]</span>
+  Header: GPS status &nbsp;|&nbsp; WiFi &nbsp;|&nbsp; Volume &nbsp;|&nbsp; Battery<br><br>
+  &nbsp;&nbsp;&nbsp;( Trip )&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;( Settings )
+</div>
+<ul>
+  <li><strong>Trip</strong> — search for and start a route</li>
+  <li><strong>Settings</strong> — configure volume, WiFi, GPS, announcements</li>
+  <li>The header bar is always visible and updates live</li>
+</ul>
+
+<h3>4.2 Trip Search</h3>
+<div class="screen-box">
+  <span class="label">[ TRIP SEARCH ]</span>
+  [ Enter train number... ] &nbsp; [ SEARCH ]<br><br>
+  &nbsp;1 2 3 4 5 6 7 8 9 0<br>
+  &nbsp;Q W E R T Y U I O P<br>
+  &nbsp;A S D F G H J K L<br>
+  &nbsp;Z X C V B N M &lt;&lt;<br>
+  &nbsp;[ BACK ] [ SPACE ] [ abc ] [ CLR ]
+</div>
+<ul>
+  <li>Type your train number using the on-screen keyboard</li>
+  <li><strong>&lt;&lt;</strong> — backspace &nbsp;|&nbsp; <strong>CLR</strong> — clear all &nbsp;|&nbsp; <strong>abc/SYM/123</strong> — change keyboard mode</li>
+  <li>Tap <strong>SEARCH</strong> to look up the route on the SD card</li>
+</ul>
+
+<h3>4.3 Trip Details</h3>
+<p>Shows the trip name, total station count, and how many audio files are ready.</p>
+<table>
+  <tr><th>Button</th><th>Action</th></tr>
+  <tr><td>START</td><td>Begin live GPS tracking on the Station Screen</td></tr>
+  <tr><td>UPDATE</td><td>Download the latest trip data and audio files over WiFi</td></tr>
+  <tr><td>DOWNLOAD</td><td>Appears when trip is not found — downloads from server</td></tr>
+  <tr><td>BACK</td><td>Return to Trip Search</td></tr>
+</table>
+<div class="note"><strong>Note:</strong> <em>Audio: X / Y files</em> shown in yellow means some audio is missing. Tap UPDATE to download missing files.</div>
+
+<h3>4.4 Station Screen</h3>
+<div class="screen-box">
+  <span class="label">[ STATION SCREEN ]</span>
+  Train: 12345 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 78 km/h<br>
+  ┌─────────────────────────────────┐<br>
+  │ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; NEXT STATION &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; │<br>
+  │ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 1240 m &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; │<br>
+  └─────────────────────────────────┘<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; UPCOMING STATION<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 4800 m<br><br>
+  [ BACK ] &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ PLAY ]
+</div>
+<ul>
+  <li><strong>Top box</strong> — next station name + distance in metres</li>
+  <li><strong>Below box</strong> — upcoming (second next) station + distance</li>
+  <li>Station name turns <span style="color:orange;"><strong>orange</strong></span> while an announcement is playing</li>
+  <li><strong>PLAY</strong> — manually test the audio for the next station</li>
+  <li><strong>BACK</strong> — stops audio and returns to Trip Search</li>
+  <li>The device automatically advances to the next station when you are within the configured <em>Approach Distance</em></li>
+</ul>
+
+<!-- SECTION 4.5 -->
+<div class="page-break"></div>
+<h3>4.5 Settings Menu</h3>
+<p>Tap <strong>Settings</strong> from the Home Menu to reach all configuration options.</p>
+<table>
+  <tr><th>Option</th><th>What it controls</th></tr>
+  <tr><td>Audio Volume</td><td>Speaker loudness 0 – 100%</td></tr>
+  <tr><td>Announcement</td><td>Trigger distances, repeat count, gap between repeats</td></tr>
+  <tr><td>WiFi Setting</td><td>Add / remove WiFi networks</td></tr>
+  <tr><td>GPS Info</td><td>Live satellite count and fix status</td></tr>
+  <tr><td>Approach Dist</td><td>Distance at which the next station card appears</td></tr>
+  <tr><td>GPS Match Dist</td><td>Radius used to detect which station you start at</td></tr>
+</table>
+
+<h3>4.6 Audio Volume</h3>
+<div class="screen-box">
+  <span class="label">[ AUDIO VOLUME ]</span>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Audio Volume<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 65%<br>
+  &nbsp;[============================○────] <br>
+  &nbsp;&nbsp; [ – ] &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ + ]
+</div>
+<ul>
+  <li>Tap <strong>+</strong> or <strong>−</strong> to change in steps of 5%</li>
+  <li>Tap anywhere on the bar to jump directly to that level</li>
+  <li>Setting is saved automatically and survives power-off</li>
+  <li>At 0% the speaker is completely silent</li>
+  <li>At 100% maximum hardware volume is used</li>
+</ul>
+
+<h3>4.7 Announcement Settings</h3>
+<table>
+  <tr><th>Row</th><th>Parameter</th><th>Default</th><th>Range / Step</th></tr>
+  <tr><td>Far (m)</td><td>Distance at which announcements begin</td><td>500 m</td><td>500 – 9000 m, step 100</td></tr>
+  <tr><td>Near (m)</td><td>Minimum distance — no new sequence if already this close</td><td>150 m</td><td>150 m+, step 50</td></tr>
+  <tr><td>Repeats</td><td>How many times the audio plays per station</td><td>4</td><td>1 – 8</td></tr>
+  <tr><td>Gap (s)</td><td>Seconds between each repeat</td><td>10 s</td><td>5 – 60 s, step 5</td></tr>
+</table>
+<div class="note"><strong>Note:</strong> Tap <strong>BACK</strong> to save these settings. They are not saved if you power off before going back.</div>
+
+<h3>4.8 WiFi Settings</h3>
+<ul>
+  <li>Up to <strong>3 networks</strong> can be saved</li>
+  <li>Tap a network row to connect to it immediately</li>
+  <li>Tap the red <strong>X</strong> on a row to delete that network</li>
+  <li>Tap <strong>+ Add Network</strong> to enter a new SSID and password</li>
+  <li>The device tries the first saved network automatically at boot</li>
+</ul>
+
+<h3>4.9 GPS Info</h3>
+<p>Read-only screen showing live GPS data. Refreshes every second.</p>
+<table>
+  <tr><th>Indicator</th><th>Meaning</th></tr>
+  <tr><td>GPS OK (green badge)</td><td>Valid location fix obtained</td></tr>
+  <tr><td>No Fix (red badge)</td><td>Waiting for satellite lock</td></tr>
+  <tr><td>Satellite count</td><td>Number of satellites in view (≥4 = good)</td></tr>
+  <tr><td>No Signal / Weak / Good</td><td>Overall signal quality</td></tr>
+</table>
+
+<h3>4.10 Approach Distance</h3>
+<p>When the GPS distance to the <em>next</em> station falls below this value, the display automatically advances to show the following station. Default <strong>500 m</strong>, range 100 – 2000 m, step 100 m. Tap BACK to save.</p>
+
+<h3>4.11 GPS Match Distance</h3>
+<p>Used once when a trip is loaded. If the nearest station is within this radius, it becomes the <em>current</em> station (already passed). If farther away, the nearest becomes the <em>next</em> station. Default <strong>200 m</strong>, range 50 – 1000 m, step 50 m. Tap BACK to save.</p>
+
+<!-- SECTION 5 -->
+<div class="page-break"></div>
+<h2>5. Audio Announcements</h2>
+<p>The system announces each station name automatically as the train approaches.</p>
+
+<h3>How it works</h3>
+<ol class="steps">
+  <li class="step">GPS reports a new location fix.</li>
+  <li class="step">Distance to the next station is calculated.</li>
+  <li class="step">When distance enters the <strong>Far–Near zone</strong>, the first announcement fires immediately.</li>
+  <li class="step">Subsequent repeats fire every <strong>Gap</strong> seconds until <strong>Repeats</strong> count is reached.</li>
+  <li class="step">Once all repeats are done, the sequence resets for the following station.</li>
+</ol>
+
+<h3>Volume Scaling</h3>
+<p>Audio volume is applied in software: each 16-bit PCM sample is multiplied by <em>Volume% / 100</em> before being sent to the I2S amplifier. This means the volume setting has an immediate, accurate effect on speaker loudness.</p>
+
+<h3>Announcement Zone Diagram</h3>
+<div class="screen-box" style="color:#ddd;font-family:monospace;font-size:11px;">
+  Train direction →<br><br>
+  ───────────────[FAR]────────[NEAR]──[STATION]<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;↑ announcements&nbsp;↑ no new start<br>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;start here
+</div>
+
+<div class="tip"><strong>Tip:</strong> If announcements repeat too many times, reduce <em>Repeats</em> to 1 or 2 in Announcement Settings.</div>
+<div class="tip"><strong>Tip:</strong> If the announcement fires too early, reduce the <em>Far</em> distance.</div>
+
+<!-- SECTION 6 -->
+<h2>6. SD Card &amp; Audio Files</h2>
+<table>
+  <tr><th>File</th><th>Location on SD</th><th>Description</th></tr>
+  <tr><td>Trip data</td><td>/12345.json</td><td>Station list for train 12345</td></tr>
+  <tr><td>Audio file</td><td>/ABC.wav</td><td>WAV announcement for station code ABC</td></tr>
+</table>
+<ul>
+  <li>SD card must be <strong>FAT32</strong> formatted</li>
+  <li>Audio files are standard WAV (PCM, 16-bit recommended)</li>
+  <li>Missing audio files are downloaded automatically when the station is announced, provided WiFi is connected</li>
+  <li>Use <strong>UPDATE</strong> on the Trip Details screen to bulk-download all audio for a route</li>
+</ul>
+<div class="warn"><strong>Warning:</strong> Do not remove the SD card while the device is powered on.</div>
+
+<!-- SECTION 7 -->
+<h2>7. WiFi &amp; Downloads</h2>
+<ul>
+  <li>Trip JSON files and audio WAV files are downloaded from the MindCoin API server</li>
+  <li>HTTPS is used — no special certificate setup required</li>
+  <li>If WiFi drops mid-download, the partially saved file is discarded and the operation fails gracefully</li>
+  <li>The device reconnects to WiFi automatically every 5 seconds if the connection is lost</li>
+</ul>
+
+<!-- SECTION 8 -->
+<h2>8. Battery Status</h2>
+<p>The battery percentage is displayed in the top-right corner of every screen.</p>
+<table>
+  <tr><th>Colour</th><th>Level</th></tr>
+  <tr><td style="color:green;font-weight:bold;">Green</td><td>Above 50%</td></tr>
+  <tr><td style="color:orange;font-weight:bold;">Orange</td><td>20 – 50%</td></tr>
+  <tr><td style="color:red;font-weight:bold;">Red</td><td>Below 20% — recharge soon</td></tr>
+</table>
+<div class="warn"><strong>Warning:</strong> Do not discharge a 3S LiPo below 9V (3.0V per cell). Charge when the indicator turns red.</div>
+
+<!-- SECTION 9 -->
+<div class="page-break"></div>
+<h2>9. Troubleshooting</h2>
+<table>
+  <tr><th>Problem</th><th>Likely Cause</th><th>Solution</th></tr>
+  <tr><td>No audio at all</td><td>Volume set to 0%, or amp relay fault</td><td>Go to Settings → Audio Volume and increase level</td></tr>
+  <tr><td>Volume knob has no effect</td><td>Old firmware (pre-fix)</td><td>Flash updated firmware with PCM scaling applied</td></tr>
+  <tr><td>SD Card FAIL at boot</td><td>Card not inserted, wrong format, or loose contact</td><td>Re-seat card; ensure it is FAT32; try a different card</td></tr>
+  <tr><td>Trip Not Found</td><td>JSON file not on SD card</td><td>Connect WiFi and tap DOWNLOAD on the result screen</td></tr>
+  <tr><td>No GPS / No Fix</td><td>GPS module not connected, or no sky view</td><td>Check wiring (GPIO 16/17); move to open sky</td></tr>
+  <tr><td>Announcements not firing</td><td>Far distance too small, or no GPS fix</td><td>Increase Far distance in Announcement Settings; wait for GPS fix</td></tr>
+  <tr><td>Station does not advance</td><td>Approach distance too small</td><td>Increase Approach Distance in Settings</td></tr>
+  <tr><td>WiFi not connecting</td><td>Wrong password, or out of range</td><td>Delete network and re-add with correct password</td></tr>
+  <tr><td>Touch not responding</td><td>SPI bus conflict, or touch calibration</td><td>Power cycle the device</td></tr>
+  <tr><td>Screen stays black</td><td>Backlight GPIO 18 fault</td><td>Check backlight wiring; reflash firmware</td></tr>
+</table>
+
+<footer>
+  Train Info GPS Display &nbsp;·&nbsp; User Guide v1.0 &nbsp;·&nbsp; MindCoin 2025<br>
+  Open this file in any browser and use <strong>File → Print → Save as PDF</strong> to export.
+</footer>
+
+</body>
+</html>

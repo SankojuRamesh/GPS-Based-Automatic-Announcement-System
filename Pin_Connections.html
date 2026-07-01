@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ESP32-S3 Pin Connections</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f0f2f5;
+    color: #1a1a2e;
+    padding: 30px 24px;
+  }
+
+  /* ── PAGE HEADER ── */
+  .page-header {
+    text-align: center;
+    margin-bottom: 34px;
+  }
+  .page-header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #0d1b4b;
+    letter-spacing: 1.5px;
+    margin-bottom: 6px;
+  }
+  .page-header .meta {
+    font-size: 11px;
+    color: #888;
+    letter-spacing: .4px;
+  }
+  .page-header .meta span {
+    margin: 0 8px;
+    color: #bbb;
+  }
+
+  /* ── MODULE CARD ── */
+  .mod {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 18px rgba(0,0,0,.10);
+    margin-bottom: 28px;
+    page-break-inside: avoid;
+  }
+
+  /* ── BANNER ── */
+  .banner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 20px;
+    color: #fff;
+  }
+  .banner .num {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 800;
+    flex-shrink: 0;
+  }
+  .banner .info .title { font-size: 15px; font-weight: 700; letter-spacing: .3px; }
+  .banner .info .sub   { font-size: 10.5px; opacity: .85; margin-top: 2px; }
+
+  /* Colours */
+  .c1 { background: linear-gradient(120deg, #4527a0 0%, #7c4dff 100%); }
+  .c2 { background: linear-gradient(120deg, #bf360c 0%, #ff7043 100%); }
+  .c3 { background: linear-gradient(120deg, #1b5e20 0%, #43a047 100%); }
+  .c4 { background: linear-gradient(120deg, #880e4f 0%, #e91e63 100%); }
+  .c5 { background: linear-gradient(120deg, #263238 0%, #546e7a 100%); }
+  .c6 { background: linear-gradient(120deg, #e65100 0%, #ffa000 100%); }
+  .cq { background: linear-gradient(120deg, #0d1b4b 0%, #1565c0 100%); }
+
+  /* ── SUB-HEADING inside card ── */
+  .sub-head {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #666;
+    background: #f7f8fc;
+    border-top: 1px solid #e8eaf0;
+    border-bottom: 1px solid #e8eaf0;
+    padding: 5px 20px;
+  }
+
+  /* ── TABLE ── */
+  table { width: 100%; border-collapse: collapse; }
+
+  thead th {
+    background: #f0f2f8;
+    color: #555;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    padding: 7px 18px;
+    border-bottom: 2px solid #dde0ee;
+    text-align: left;
+  }
+
+  tbody td {
+    padding: 7px 18px;
+    font-size: 11.5px;
+    border-bottom: 1px solid #f0f2f5;
+    vertical-align: middle;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:nth-child(even) td { background: #fafbfe; }
+  tbody tr:hover td { background: #eff1fa; }
+
+  /* GPIO badge */
+  .g {
+    display: inline-block;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 5px;
+    white-space: nowrap;
+  }
+  .g-io  { background: #1a237e; color: #fff; }
+  .g-pwr { background: #b71c1c; color: #fff; }
+  .g-gnd { background: #212121; color: #fff; }
+  .g-pas { background: #546e7a; color: #fff; }
+  .g-cfg { background: #6a1b9a; color: #fff; }
+
+  /* Signal name */
+  .sig { font-family: 'Courier New', monospace; font-size: 11px; color: #6a0000; font-weight: 600; }
+
+  /* Direction pill */
+  .d {
+    display: inline-block;
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+    letter-spacing: .3px;
+  }
+  .d-out { background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
+  .d-in  { background: #e3f2fd; color: #0d47a1; border: 1px solid #90caf9; }
+  .d-ana { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
+  .d-pwr { background: #fce4ec; color: #880e4f; border: 1px solid #f48fb1; }
+  .d-gnd { background: #f5f5f5; color: #424242; border: 1px solid #bdbdbd; }
+  .d-cfg { background: #f3e5f5; color: #4a148c; border: 1px solid #ce93d8; }
+  .d-pas { background: #eceff1; color: #37474f; border: 1px solid #b0bec5; }
+
+  /* Note box */
+  .note {
+    border-top: 2px solid #ffe082;
+    background: #fffde7;
+    padding: 9px 20px;
+    font-size: 10.5px;
+    color: #555;
+    line-height: 1.75;
+  }
+  .note b { color: #333; }
+  .note code {
+    background: #f0f0f0;
+    padding: 0 4px;
+    border-radius: 3px;
+    font-size: 10px;
+    color: #880000;
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    body { background: #fff; padding: 10px; font-size: 10px; }
+    .mod { box-shadow: none; border: 1px solid #ccc; margin-bottom: 18px; }
+    .banner, thead th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .g, .d { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tbody tr:nth-child(even) td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ PAGE HEADER ══════════════════════════════════════════════ -->
+<div class="page-header">
+  <h1>ESP32-S3 — Hardware Pin Connections</h1>
+  <div class="meta">
+    Project: Train GPS Display System
+    <span>|</span> MCU: ESP32-S3
+    <span>|</span> Source: d3.ino + User_Setup.h (Setup20_ILI9488)
+  </div>
+</div>
+
+
+<!-- ══ MODULE 1 — TFT Display + Touch ══════════════════════════ -->
+<div class="mod">
+  <div class="banner c1">
+    <div class="num">1</div>
+    <div class="info">
+      <div class="title">TFT Display + Touch Controller</div>
+      <div class="sub">3.5&quot; ILI9488 Display &amp; XPT2046 Touch — TFT_eSPI Library (Setup20_ILI9488)</div>
+    </div>
+  </div>
+
+  <div class="sub-head">TFT Display — ILI9488</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:160px">ESP32-S3 GPIO</th>
+        <th style="width:160px">Signal / Define</th>
+        <th>TFT Module Pin</th>
+        <th style="width:90px">Direction</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="g g-io">GPIO 8</span></td>
+        <td class="sig">TFT_DC</td>
+        <td>DC / RS &nbsp;<em style="color:#888;font-size:10px">(Data / Command select)</em></td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 9</span></td>
+        <td class="sig">TFT_RST</td>
+        <td>RST &nbsp;<em style="color:#888;font-size:10px">(Reset, active LOW)</em></td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 10</span></td>
+        <td class="sig">TFT_CS</td>
+        <td>CS &nbsp;<em style="color:#888;font-size:10px">(Chip Select, active LOW)</em></td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 11</span></td>
+        <td class="sig">TFT_MOSI</td>
+        <td>SDA / MOSI &nbsp;<em style="color:#888;font-size:10px">(Serial Data In)</em></td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 12</span></td>
+        <td class="sig">TFT_SCLK</td>
+        <td>SCL / CLK &nbsp;<em style="color:#888;font-size:10px">(Clock)</em></td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 13</span></td>
+        <td class="sig">TFT_MISO</td>
+        <td>MISO / SDO &nbsp;<em style="color:#888;font-size:10px">(Read back, shared with Touch)</em></td>
+        <td><span class="d d-in">IN</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 18</span></td>
+        <td class="sig">TFT_BL_PIN</td>
+        <td>BL / LED+ &nbsp;<em style="color:#888;font-size:10px">(Backlight enable)</em></td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-pwr">3.3 V</span></td>
+        <td class="sig">VCC</td>
+        <td>VCC</td>
+        <td><span class="d d-pwr">PWR</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-gnd">GND</span></td>
+        <td class="sig">GND</td>
+        <td>GND</td>
+        <td><span class="d d-gnd">GND</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="sub-head">Touch Controller — XPT2046</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:160px">ESP32-S3 GPIO</th>
+        <th style="width:160px">Signal / Define</th>
+        <th>XPT2046 Pin</th>
+        <th style="width:90px">Direction</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="g g-io">GPIO 11</span></td>
+        <td class="sig">TFT_MOSI</td>
+        <td>DIN &nbsp;<em style="color:#888;font-size:10px">(Data In, shared with TFT)</em></td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 12</span></td>
+        <td class="sig">TFT_SCLK</td>
+        <td>CLK &nbsp;<em style="color:#888;font-size:10px">(Clock, shared with TFT)</em></td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 13</span></td>
+        <td class="sig">TOUCH_MISO</td>
+        <td>DOUT &nbsp;<em style="color:#888;font-size:10px">(Data Out)</em></td>
+        <td><span class="d d-in">IN</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 14</span></td>
+        <td class="sig">TOUCH_CS</td>
+        <td>CS &nbsp;<em style="color:#888;font-size:10px">(Chip Select, active LOW)</em></td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-pwr">3.3 V</span></td>
+        <td class="sig">VCC</td>
+        <td>VCC</td>
+        <td><span class="d d-pwr">PWR</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-gnd">GND</span></td>
+        <td class="sig">GND</td>
+        <td>GND</td>
+        <td><span class="d d-gnd">GND</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <b>SPI Frequencies (User_Setup.h):</b>
+    &nbsp; TFT Write = <b>27 MHz</b> &nbsp;|&nbsp; TFT Read = <b>20 MHz</b> &nbsp;|&nbsp; Touch = <b>2.5 MHz</b><br>
+    <b>Shared SPI bus:</b> GPIO 11 (MOSI) and GPIO 12 (SCK) are shared between TFT and Touch.<br>
+    <b>MISO line:</b> GPIO 13 is used for both TFT read-back and touch data — CS lines ensure only one device is active at a time.
+  </div>
+</div>
+
+
+<!-- ══ MODULE 2 — SD Card ════════════════════════════════════════ -->
+<div class="mod">
+  <div class="banner c2">
+    <div class="num">2</div>
+    <div class="info">
+      <div class="title">SD Card Module</div>
+      <div class="sub">SPI Mode — Arduino SD Library &nbsp;|&nbsp; Separate MISO line (GPIO 40)</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:160px">ESP32-S3 GPIO</th>
+        <th style="width:160px">Signal / Define</th>
+        <th>SD Card Pin</th>
+        <th style="width:90px">Direction</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="g g-io">GPIO 11</span></td>
+        <td class="sig">MOSI</td>
+        <td>DI / CMD &nbsp;<em style="color:#888;font-size:10px">(Data In)</em></td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 12</span></td>
+        <td class="sig">SCK</td>
+        <td>CLK / SCLK &nbsp;<em style="color:#888;font-size:10px">(Clock)</em></td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 15</span></td>
+        <td class="sig">SD_CS</td>
+        <td>CS / SS &nbsp;<em style="color:#888;font-size:10px">(Chip Select, active LOW)</em></td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 40</span></td>
+        <td class="sig">SD_MISO</td>
+        <td>DO / DAT0 &nbsp;<em style="color:#888;font-size:10px">(Data Out — dedicated line)</em></td>
+        <td><span class="d d-in">IN</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-pwr">3.3 V</span></td>
+        <td class="sig">VCC</td>
+        <td>VCC</td>
+        <td><span class="d d-pwr">PWR</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-gnd">GND</span></td>
+        <td class="sig">GND</td>
+        <td>GND</td>
+        <td><span class="d d-gnd">GND</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <b>Dual-MISO design:</b> SD uses GPIO 40, Touch uses GPIO 13. Before every SD operation the firmware calls:<br>
+    &nbsp;&nbsp;<code>SPI.end()</code> → <code>SPI.begin(SCK=12, MISO=40, MOSI=11, SS=15)</code><br>
+    After SD is done it switches back to GPIO 13 for touch. SD CS (GPIO 15) is held <b>HIGH</b> during touch reads.
+  </div>
+</div>
+
+
+<!-- ══ MODULE 3 — GPS Module ════════════════════════════════════ -->
+<div class="mod">
+  <div class="banner c3">
+    <div class="num">3</div>
+    <div class="info">
+      <div class="title">GPS Module</div>
+      <div class="sub">L89H or any NMEA module — ESP32-S3 HardwareSerial UART1 — TinyGPSPlus</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:160px">ESP32-S3 GPIO</th>
+        <th style="width:160px">Signal / Define</th>
+        <th>GPS Module Pin</th>
+        <th style="width:90px">Direction</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="g g-io">GPIO 16</span></td>
+        <td class="sig">GPS_RX (UART1 RX)</td>
+        <td>TX &nbsp;<em style="color:#888;font-size:10px">(GPS module transmits here)</em></td>
+        <td><span class="d d-in">IN</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 17</span></td>
+        <td class="sig">GPS_TX (UART1 TX)</td>
+        <td>RX &nbsp;<em style="color:#888;font-size:10px">(GPS module receives here)</em></td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-pwr">3.3 V</span></td>
+        <td class="sig">VCC</td>
+        <td>VCC</td>
+        <td><span class="d d-pwr">PWR</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-gnd">GND</span></td>
+        <td class="sig">GND</td>
+        <td>GND</td>
+        <td><span class="d d-gnd">GND</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <b>UART1:</b> Initialised with <code>gpsSerial.begin(baud, SERIAL_8N1, GPS_RX=16, GPS_TX=17)</code>.<br>
+    <b>Baud rate:</b> Standard NMEA = 9600 bps &nbsp;|&nbsp; L89H supports up to 115200 bps — match in firmware.<br>
+    <b>Logic level:</b> Most GPS modules are 3.3 V. If yours is 5 V, use a level shifter on TX/RX lines.
+  </div>
+</div>
+
+
+<!-- ══ MODULE 4 — I2S Audio Amplifier ══════════════════════════ -->
+<div class="mod">
+  <div class="banner c4">
+    <div class="num">4</div>
+    <div class="info">
+      <div class="title">I2S Audio Amplifier — MAX98357A</div>
+      <div class="sub">ESP-IDF Raw I2S Driver (I2S_NUM_0) — WAV playback from SD card</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:160px">ESP32-S3 GPIO</th>
+        <th style="width:160px">Signal / Define</th>
+        <th>MAX98357A Pin</th>
+        <th style="width:90px">Direction</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="g g-io">GPIO 35</span></td>
+        <td class="sig">ANN_I2S_BCK_PIN</td>
+        <td>BCLK &nbsp;<em style="color:#888;font-size:10px">(Bit Clock)</em></td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 36</span></td>
+        <td class="sig">ANN_I2S_WS_PIN</td>
+        <td>LRC &nbsp;<em style="color:#888;font-size:10px">(Word Select / LRCK)</em></td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 37</span></td>
+        <td class="sig">ANN_I2S_DOUT_PIN</td>
+        <td>DIN &nbsp;<em style="color:#888;font-size:10px">(Serial Audio Data)</em></td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-cfg">3.3 V or Float</span></td>
+        <td class="sig">SD_MODE</td>
+        <td>SD &nbsp;<em style="color:#888;font-size:10px">(Shutdown / Enable)</em></td>
+        <td><span class="d d-cfg">CONFIG</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-cfg">Float</span></td>
+        <td class="sig">GAIN</td>
+        <td>GAIN &nbsp;<em style="color:#888;font-size:10px">(Gain select)</em></td>
+        <td><span class="d d-cfg">CONFIG</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-pwr">5 V</span></td>
+        <td class="sig">VIN</td>
+        <td>VIN &nbsp;<em style="color:#888;font-size:10px">(3.0 – 5.5 V supply)</em></td>
+        <td><span class="d d-pwr">PWR</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-gnd">GND</span></td>
+        <td class="sig">GND</td>
+        <td>GND</td>
+        <td><span class="d d-gnd">GND</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <b>SD_MODE:</b> 3.3 V or floating = amplifier <b>enabled</b> &nbsp;|&nbsp; GND = shutdown.<br>
+    <b>GAIN pin:</b> Float = <b>9 dB</b> &nbsp;|&nbsp; GND = 12 dB &nbsp;|&nbsp; 3.3 V = 15 dB &nbsp;|&nbsp; 100kΩ to GND = 6 dB.<br>
+    <b>Speaker:</b> Connect to OUT+ / OUT− differential outputs (no capacitor needed).<br>
+    <b>Power:</b> Controlled by relay (Module 5). Relay turns ON 150 ms before playback, OFF after audio ends.
+  </div>
+</div>
+
+
+<!-- ══ MODULE 5 — Amplifier Relay ══════════════════════════════ -->
+<div class="mod">
+  <div class="banner c5">
+    <div class="num">5</div>
+    <div class="info">
+      <div class="title">Amplifier Power Relay</div>
+      <div class="sub">Switches 5 V supply to MAX98357A — power saving between announcements</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:160px">ESP32-S3 GPIO</th>
+        <th style="width:160px">Signal / Define</th>
+        <th>Relay Module Pin</th>
+        <th style="width:90px">Direction</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="g g-io">GPIO 38</span></td>
+        <td class="sig">AMP_RELAY_PIN</td>
+        <td>IN &nbsp;<em style="color:#888;font-size:10px">(Control signal)</em></td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-pwr">5 V</span></td>
+        <td class="sig">VCC</td>
+        <td>VCC &nbsp;<em style="color:#888;font-size:10px">(Relay coil supply)</em></td>
+        <td><span class="d d-pwr">PWR</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-gnd">GND</span></td>
+        <td class="sig">GND</td>
+        <td>GND</td>
+        <td><span class="d d-gnd">GND</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-pwr">5 V rail</span></td>
+        <td class="sig">COM</td>
+        <td>COM &nbsp;<em style="color:#888;font-size:10px">(Common — relay input side)</em></td>
+        <td><span class="d d-pwr">PWR</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-pas">MAX98357A VIN</span></td>
+        <td class="sig">NO</td>
+        <td>NO &nbsp;<em style="color:#888;font-size:10px">(Normally Open — to amp supply)</em></td>
+        <td><span class="d d-pas">SWITCHED</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <b>GPIO 38 HIGH</b> → Relay ON → 5 V connected to MAX98357A VIN → Amplifier <b>powered</b>.<br>
+    <b>GPIO 38 LOW</b> &nbsp;→ Relay OFF → 5 V disconnected from MAX98357A VIN → Amplifier <b>off</b>.<br>
+    Relay coil (VCC/GND) is powered separately from the switched load. If using a transistor-driven relay board, ensure the board's logic input is compatible with 3.3 V from ESP32-S3.
+  </div>
+</div>
+
+
+<!-- ══ MODULE 6 — Battery Monitor ══════════════════════════════ -->
+<div class="mod">
+  <div class="banner c6">
+    <div class="num">6</div>
+    <div class="info">
+      <div class="title">Battery Monitor</div>
+      <div class="sub">3S LiPo Pack (9.0 – 12.6 V) via Resistor Voltage Divider → ESP32-S3 ADC</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:160px">Connection Point</th>
+        <th style="width:160px">Signal / Component</th>
+        <th>Detail</th>
+        <th style="width:90px">Type</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="g g-pwr">Battery (+)</span></td>
+        <td class="sig">VBAT</td>
+        <td>3S LiPo positive — 9.0 V (empty) to 12.6 V (full)</td>
+        <td><span class="d d-pwr">SOURCE</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-pas">R1 (top)</span></td>
+        <td class="sig">40 kΩ resistor</td>
+        <td>From Battery(+) to GPIO 1 mid-point node</td>
+        <td><span class="d d-pas">PASSIVE</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 1</span></td>
+        <td class="sig">BAT_ADC_PIN</td>
+        <td>ADC mid-point — reads 1800 mV (empty) to 2520 mV (full)</td>
+        <td><span class="d d-ana">ANA IN</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-pas">R2 (bottom)</span></td>
+        <td class="sig">10 kΩ resistor</td>
+        <td>From GPIO 1 mid-point node to GND</td>
+        <td><span class="d d-pas">PASSIVE</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-gnd">Battery (−) / GND</span></td>
+        <td class="sig">GND</td>
+        <td>Common ground</td>
+        <td><span class="d d-gnd">GND</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note">
+    <b>Divider ratio:</b> R2 ÷ (R1 + R2) = 10k ÷ 50k = <b>0.2</b><br>
+    <b>12.6 V</b> (3 × 4.2 V, fully charged) → <b>2520 mV</b> at GPIO 1
+    &nbsp;&nbsp;|&nbsp;&nbsp;
+    <b>9.0 V</b> (3 × 3.0 V, empty) → <b>1800 mV</b> at GPIO 1<br>
+    Firmware uses <code>analogReadMilliVolts()</code> (ESP32-S3 calibrated ADC) with a 32-sample sorted average,
+    trimming the top and bottom 25% to reject noise.
+  </div>
+</div>
+
+
+<!-- ══ QUICK REFERENCE — all GPIOs ═════════════════════════════ -->
+<div class="mod">
+  <div class="banner cq">
+    <div class="num" style="font-size:13px">QR</div>
+    <div class="info">
+      <div class="title">Quick Reference — All GPIO Assignments (17 pins)</div>
+      <div class="sub">d3.ino + User_Setup.h (Setup20_ILI9488) — ESP32-S3</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:120px">GPIO</th>
+        <th style="width:180px">Signal / Define</th>
+        <th>Function</th>
+        <th style="width:65px">Module</th>
+        <th style="width:85px">Direction</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="g g-io">GPIO 1</span></td>
+        <td class="sig">BAT_ADC_PIN</td>
+        <td>Battery voltage divider ADC input</td>
+        <td>MOD 6</td>
+        <td><span class="d d-ana">ANA IN</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 8</span></td>
+        <td class="sig">TFT_DC</td>
+        <td>TFT Data / Command select (DC / RS)</td>
+        <td>MOD 1</td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 9</span></td>
+        <td class="sig">TFT_RST</td>
+        <td>TFT Reset (active LOW)</td>
+        <td>MOD 1</td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 10</span></td>
+        <td class="sig">TFT_CS</td>
+        <td>TFT Chip Select (active LOW)</td>
+        <td>MOD 1</td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 11</span></td>
+        <td class="sig">TFT_MOSI / MOSI</td>
+        <td>Shared SPI MOSI → TFT + XPT2046 + SD Card</td>
+        <td>MOD 1/2</td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 12</span></td>
+        <td class="sig">TFT_SCLK / SCK</td>
+        <td>Shared SPI Clock → TFT + XPT2046 + SD Card</td>
+        <td>MOD 1/2</td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 13</span></td>
+        <td class="sig">TFT_MISO / TOUCH_MISO</td>
+        <td>TFT MISO + XPT2046 DOUT (Touch read-back)</td>
+        <td>MOD 1</td>
+        <td><span class="d d-in">IN</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 14</span></td>
+        <td class="sig">TOUCH_CS</td>
+        <td>XPT2046 Touch Chip Select (active LOW)</td>
+        <td>MOD 1</td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 15</span></td>
+        <td class="sig">SD_CS</td>
+        <td>SD Card Chip Select (active LOW)</td>
+        <td>MOD 2</td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 16</span></td>
+        <td class="sig">GPS_RX</td>
+        <td>UART1 RX ← GPS module TX</td>
+        <td>MOD 3</td>
+        <td><span class="d d-in">IN</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 17</span></td>
+        <td class="sig">GPS_TX</td>
+        <td>UART1 TX → GPS module RX</td>
+        <td>MOD 3</td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 18</span></td>
+        <td class="sig">TFT_BL_PIN</td>
+        <td>TFT Display Backlight enable</td>
+        <td>MOD 1</td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 35</span></td>
+        <td class="sig">ANN_I2S_BCK_PIN</td>
+        <td>I2S Bit Clock → MAX98357A BCLK</td>
+        <td>MOD 4</td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 36</span></td>
+        <td class="sig">ANN_I2S_WS_PIN</td>
+        <td>I2S Word Select (LRC) → MAX98357A LRC</td>
+        <td>MOD 4</td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 37</span></td>
+        <td class="sig">ANN_I2S_DOUT_PIN</td>
+        <td>I2S Serial Data → MAX98357A DIN</td>
+        <td>MOD 4</td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 38</span></td>
+        <td class="sig">AMP_RELAY_PIN</td>
+        <td>Amplifier relay control — HIGH = ON, LOW = OFF</td>
+        <td>MOD 5</td>
+        <td><span class="d d-out">OUT</span></td>
+      </tr>
+      <tr>
+        <td><span class="g g-io">GPIO 40</span></td>
+        <td class="sig">SD_MISO</td>
+        <td>SD Card MISO / DO (dedicated, separate from Touch MISO)</td>
+        <td>MOD 2</td>
+        <td><span class="d d-in">IN</span></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div style="text-align:center; margin-top:10px; font-size:10px; color:#aaa;">
+  Train GPS Display System — ESP32-S3 — d3.ino + Setup20_ILI9488.h
+  &nbsp;|&nbsp; Open in Chrome / Edge → Ctrl+P → Save as PDF
+</div>
+
+</body>
+</html>
