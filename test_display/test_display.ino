@@ -45,8 +45,8 @@ int  kbMode           = 0;  // 0=UPPER  1=lower  2=symbols
 
 int        volumeLevel = 50;
 Preferences prefs;
-float announceDistM    = 100.0f;
-float announceNearDistM = 100.0f;
+float announceDistM    = 500.0f;
+float announceNearDistM = 150.0f;
 int   announceReps     = 4;
 int   announceGapSec   = 10;
 
@@ -71,7 +71,7 @@ unsigned long  lastGpsDataMs  = 0;
 unsigned long  lastGpsFixMs   = 0;   // last millis() when a valid location fix was received
 int            gpsSatCount  = 0;
 bool           sdReady      = false;
-float          approachDistM  = 500.0f;  // fixed internal gate for closest-point-of-approach detection — no longer user-configurable
+float          approachDistM  = 500.0f;
 float          gpsMatchDistM  = 200.0f;  // radius used to pin current station on trip load
 
 int batteryPercent = 0;
@@ -92,6 +92,7 @@ XPT2046_Touchscreen ts(TOUCH_CS);
 #define SCREEN_WIFI_PASS  8
 #define SCREEN_ANNOUNCE   9
 #define SCREEN_GPS        10
+#define SCREEN_APPROACH   11
 #define SCREEN_GPS_MATCH   12
 #define SCREEN_TRIP_DETAIL 13
 int currentScreen = SCREEN_MENU;
@@ -406,7 +407,7 @@ void updateSearchText() {
 #define SETT_BTN_H    40
 #define SETT_BTN_GAP   4
 #define SETT_START_Y  (HEADER_H + 8)
-#define SETT_COUNT     5
+#define SETT_COUNT     6
 #define SETT_PER_COL   5           // items per column before wrapping to next
 #define SETT_COL1_X    8
 #define SETT_COL2_X    244         // 8 + 228 + 8
@@ -417,6 +418,7 @@ const char* settingLabels[] = {
   "Announcement",
   "Wifi Setting",
   "GPS Info",
+  "Approach Dist",
   "GPS Match Dist"
 };
 
@@ -841,6 +843,61 @@ void handleAnnounceTouch(int tx, int ty) {
   }
 }
 
+// ── Approach Distance Screen ─────────────────────────────────────────────────
+#define APP_VAL_Y    (HEADER_H + 66)
+#define APP_BTN_Y    (HEADER_H + 128)
+#define APP_BTN_W    100
+#define APP_BTN_H     52
+#define APP_MINUS_X   90
+#define APP_PLUS_X   290
+
+void drawApproachValue() {
+  tft.fillRect(80, APP_VAL_Y, 320, 54, TFT_BLACK);
+  tft.setTextDatum(MC_DATUM);
+  tft.setTextSize(4);
+  tft.setTextColor(TFT_YELLOW, TFT_BLACK);
+  char buf[14]; snprintf(buf, sizeof(buf), "%d m", (int)approachDistM);
+  tft.drawString(buf, 240, APP_VAL_Y + 24);
+}
+
+void drawApproachScreen() {
+  tft.fillRect(0, HEADER_H, 480, 320 - HEADER_H, TFT_BLACK);
+  drawHeader();
+  tft.setTextDatum(MC_DATUM);
+  tft.setTextSize(2); tft.setTextColor(TFT_CYAN, TFT_BLACK);
+  tft.drawString("Station Approach Dist", 240, HEADER_H + 18);
+  drawApproachValue();
+  // – button
+  tft.fillRoundRect(APP_MINUS_X, APP_BTN_Y, APP_BTN_W, APP_BTN_H, 8, 0x4A69);
+  tft.setTextSize(3); tft.setTextColor(TFT_WHITE, 0x4A69);
+  tft.drawString("-", APP_MINUS_X + APP_BTN_W / 2, APP_BTN_Y + APP_BTN_H / 2);
+  // + button
+  tft.fillRoundRect(APP_PLUS_X, APP_BTN_Y, APP_BTN_W, APP_BTN_H, 8, 0x4A69);
+  tft.drawString("+", APP_PLUS_X + APP_BTN_W / 2, APP_BTN_Y + APP_BTN_H / 2);
+  tft.setTextSize(1); tft.setTextColor(TFT_DARKGREY, TFT_BLACK);
+  tft.drawString("Step: 100 m     Range: 100 - 2000 m", 240, APP_BTN_Y + APP_BTN_H + 16);
+  tft.drawString("Distance at which next station is shown", 240, APP_BTN_Y + APP_BTN_H + 30);
+  drawBackButton();
+}
+
+void handleApproachTouch(int tx, int ty) {
+  if (backButtonHit(tx, ty)) {
+    prefs.putFloat("approachDist", approachDistM);
+    currentScreen = SCREEN_SETTINGS;
+    drawSettingsScreen();
+    return;
+  }
+  bool isMinus = (tx >= APP_MINUS_X && tx < APP_MINUS_X + APP_BTN_W &&
+                  ty >= APP_BTN_Y   && ty < APP_BTN_Y   + APP_BTN_H);
+  bool isPlus  = (tx >= APP_PLUS_X  && tx < APP_PLUS_X  + APP_BTN_W &&
+                  ty >= APP_BTN_Y   && ty < APP_BTN_Y   + APP_BTN_H);
+  if (!isMinus && !isPlus) return;
+  approachDistM += (isPlus ? 100.0f : -100.0f);
+  if (approachDistM < 100.0f)  approachDistM = 100.0f;
+  if (approachDistM > 2000.0f) approachDistM = 2000.0f;
+  drawApproachValue();
+}
+
 // ── GPS Match Distance Screen ─────────────────────────────────────────────────
 // This distance is used ONCE at trip load: if the nearest station is within
 // gpsMatchDistM metres, it becomes the current station; otherwise the nearest
@@ -1070,14 +1127,6 @@ static bool loadOneStation(int seqNo, StaEntry& dst) {
 static bool          pendingAdvance = false;
 static unsigned long lastAdvanceMs  = 0;
 
-// Closest-point-of-approach tracking — confirms the train has passed staWin[1]
-// (distance climbing off its running minimum) instead of requiring a GPS fix
-// to land inside a tiny fixed radius, which fast trains / low GPS rate can skip over.
-static float   staDistMin       = -1.0f;  // running minimum distance to staWin[1] (-1 = not tracking yet)
-static uint8_t staIncreaseCount = 0;      // consecutive GPS fixes read above staDistMin
-static float   staDispHoldM     = -1.0f;  // when >=0, freeze the on-screen next-station distance at this value
-                                           // instead of an unconfirmed growing reading (-1 = show live distance)
-
 // Announcement state
 static bool          annActive       = false;   // sequence in progress
 static int           annFired        = 0;        // how many announcements fired so far
@@ -1095,7 +1144,6 @@ void advanceStation() {
   staWin[2].seqNo = -1;
   pendingAdvance = true;  // defer SD load to main loop — never block GPS serial here
   annActive = false; annFired = 0; annBannerMs = 0; annOutsideCount = 0;   // reset for the new next station
-  staDistMin = -1.0f; staIncreaseCount = 0; staDispHoldM = -1.0f;   // reset closest-point tracking for the new next station
   Serial.printf("[STA] Advance queued → next=%s\n", hasNext1() ? staWin[1].name : "end");
 }
 
@@ -1194,7 +1242,6 @@ bool searchTrip(const char* trainNum) {
   fill(staWin[0], winStart);
   fill(staWin[1], winStart + 1);
   fill(staWin[2], winStart + 2);
-  staDistMin = -1.0f; staIncreaseCount = 0; staDispHoldM = -1.0f;   // fresh closest-point tracking for this trip's next station
 
   strncpy(tripName, trainNum, sizeof(tripName) - 1);
   tripName[sizeof(tripName) - 1] = '\0';
@@ -1524,8 +1571,7 @@ void drawStationContent() {
     tft.drawString(staWin[1].name, 240, STA_NAME1_Y);
     tft.setTextSize(3); tft.setTextColor(TFT_GREEN, TFT_BLACK);
     if (gpsHasFix) {
-      float d = (staDispHoldM >= 0) ? staDispHoldM
-                                     : haversineKm(gpsLat, gpsLon, staWin[1].lat, staWin[1].lon) * 1000.0f;
+      float d = haversineKm(gpsLat, gpsLon, staWin[1].lat, staWin[1].lon) * 1000.0f;
       char buf[24]; snprintf(buf, sizeof(buf), "%.0f m", d);
       tft.drawString(buf, 240, STA_DIST1_Y);
     } else {
@@ -1562,8 +1608,7 @@ void updateDistancesDisplay() {
   tft.fillRect(0, STA_DIST1_Y, 480, 24, TFT_BLACK);
   tft.setTextSize(3); tft.setTextColor(TFT_GREEN, TFT_BLACK);
   if (hasNext1() && gpsHasFix) {
-    float d = (staDispHoldM >= 0) ? staDispHoldM
-                                   : haversineKm(gpsLat, gpsLon, staWin[1].lat, staWin[1].lon) * 1000.0f;
+    float d = haversineKm(gpsLat, gpsLon, staWin[1].lat, staWin[1].lon) * 1000.0f;
     char buf[24]; snprintf(buf, sizeof(buf), "%.0f m", d);
     tft.drawString(buf, 240, STA_DIST1_Y);
   } else {
@@ -1953,8 +1998,10 @@ bool stableTouch(int &tx, int &ty) {
     delay(5);
   }
   if (n == 0) return false;
-  tx = constrain(map(sumX / n, 3800, 300, 480, 0), 0, 479);
-  ty = constrain(map(sumY / n, 3800, 300, 320, 0), 0, 319);
+  long rawX = sumX / n, rawY = sumY / n;
+  tx = constrain(map(rawX, 3800, 300, 480, 0), 0, 479);
+  ty = constrain(map(rawY, 3800, 300, 320, 0), 0, 319);
+  Serial.printf("[TOUCH] raw=(%ld,%ld) -> screen=(%d,%d)\n", rawX, rawY, tx, ty);
   while (ts.touched()) delay(10);
   delay(40);
   return true;
@@ -2125,8 +2172,11 @@ void setup() {
   ledcAttach(TFT_BL_PIN, 5000, 8);
   ledcWrite(TFT_BL_PIN, 255);
 
-  // ── TFT + Touch ───────────────────────────────────────────────────────────
-  SPI.begin(12, TOUCH_MISO, 11);
+  // ── TFT ───────────────────────────────────────────────────────────────────
+  // MISO left unconnected (-1) for the TFT init itself — matches the verified
+  // working test_display.ino smoke test. Touch MISO (GPIO13) is switched in
+  // right before ts.begin() below, once the panel is already up.
+  SPI.begin(12, -1, 11);
   tft.begin();
   tft.setRotation(3);
   tft.fillScreen(TFT_BLACK);
@@ -2181,6 +2231,7 @@ void setup() {
   announceNearDistM = prefs.getFloat("annNearDist", 150.0f);
   announceReps      = prefs.getInt("annReps",      4);
   announceGapSec    = prefs.getInt("annGapSec",    10);
+  approachDistM  = prefs.getFloat("approachDist",  500.0f);
   gpsMatchDistM  = prefs.getFloat("gpsMatchDist",  200.0f);
 
   splashProgress(100, "Ready!");
@@ -2227,23 +2278,7 @@ void loop() {
       if (hasNext1()) {
         float distM = haversineKm(gpsLat, gpsLon,
                         staWin[1].lat, staWin[1].lon) * 1000.0f;
-        // Closest-point-of-approach: only evaluate inside the approach zone.
-        // Track the running minimum distance; once 2 consecutive fixes read
-        // farther than that minimum, the train has passed the station — advance.
-        if (distM <= approachDistM) {
-          if (staDistMin < 0 || distM < staDistMin) {
-            staDistMin   = distM;
-            staIncreaseCount = 0;
-            staDispHoldM = -1.0f;        // genuinely approaching — show live distance
-          } else if (distM > staDistMin) {
-            staIncreaseCount++;
-            if (staIncreaseCount >= 2) {
-              advanceStation();          // confirmed — staWin[1] swaps to next station below
-            } else {
-              staDispHoldM = staDistMin; // unconfirmed blip — freeze display, don't show it growing
-            }
-          }
-        }
+        if (distM < approachDistM) advanceStation();  // sets pendingAdvance only
         checkAnnouncement(distM);
       }
     }
@@ -2332,7 +2367,8 @@ void loop() {
         else if (si == 1) { currentScreen = SCREEN_ANNOUNCE; drawAnnounceScreen(); }
         else if (si == 2) { currentScreen = SCREEN_WIFI;     drawWifiScreen();     }
         else if (si == 3) { currentScreen = SCREEN_GPS;      drawGpsScreen();      }
-        else if (si == 4) { currentScreen = SCREEN_GPS_MATCH; drawGmsScreen();      }
+        else if (si == 4) { currentScreen = SCREEN_APPROACH;  drawApproachScreen(); }
+        else if (si == 5) { currentScreen = SCREEN_GPS_MATCH; drawGmsScreen();      }
       }
     }
   } else if (currentScreen == SCREEN_VOLUME) {
@@ -2380,6 +2416,8 @@ void loop() {
       currentScreen = SCREEN_SETTINGS;
       drawSettingsScreen();
     }
+  } else if (currentScreen == SCREEN_APPROACH) {
+    handleApproachTouch(tx, ty);
   } else if (currentScreen == SCREEN_GPS_MATCH) {
     handleGmsTouch(tx, ty);
   } else if (currentScreen == SCREEN_ANNOUNCE) {
